@@ -101,6 +101,35 @@ discountInput.addEventListener("input", recalculate);
 vatInput.addEventListener("input", recalculate);
 currencyInput.addEventListener("change", recalculate);
 
+function preparePrint() {
+  recalculate();
+  const number = document.getElementById("estimate-number").value.trim() || "—";
+  const date = document.getElementById("estimate-date").value;
+  const formattedDate = date ? date.split("-").reverse().join(".") : "—";
+  document.getElementById("print-heading").textContent = `Смета № ${number} от ${formattedDate}`;
+
+  // Plain text copies wrap long values and print the entire comment.
+  document.querySelectorAll(".print-value").forEach((value) => value.remove());
+  document.querySelectorAll(".details-grid input, #items input, #items select, #comment").forEach((field) => {
+    const value = document.createElement("span");
+    value.className = "print-value";
+    if (field.dataset.field === "price") {
+      value.textContent = formatMoney(parseNumber(field.value));
+    } else if (field.dataset.field === "quantity") {
+      value.textContent = String(parseNumber(field.value)).replace(".", ",");
+    } else {
+      value.textContent = field.type === "date" ? formattedDate : field.value;
+    }
+    field.insertAdjacentElement("afterend", value);
+  });
+}
+
+document.getElementById("save-pdf").addEventListener("click", () => {
+  preparePrint();
+  window.print();
+});
+window.addEventListener("beforeprint", preparePrint);
+
 const today = new Date();
 document.getElementById("estimate-date").value = [
   today.getFullYear(),
