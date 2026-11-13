@@ -4,17 +4,20 @@ const items = document.getElementById("items");
 const total = document.getElementById("total");
 const template = document.getElementById("item-template");
 const addButton = document.getElementById("add-item");
+const discountInput = document.getElementById("discount-percent");
+const vatInput = document.getElementById("vat-percent");
+const currencyInput = document.getElementById("currency");
 let nextItemId = 0;
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
   minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 0,
   useGrouping: true,
 });
 
 function formatMoney(value) {
   const safeValue = Number.isFinite(value) ? value : 0;
-  return `${moneyFormatter.format(safeValue).replace(/[\u00a0\u202f]/g, " ")} ₸`;
+  return `${moneyFormatter.format(safeValue).replace(/[\u00a0\u202f]/g, " ")} ${currencyInput.value}`;
 }
 
 function parseNumber(value) {
@@ -30,13 +33,33 @@ function recalculate() {
     const quantity = parseNumber(row.querySelector('[data-field="quantity"]').value);
     const price = parseNumber(row.querySelector('[data-field="price"]').value);
     const product = quantity * price;
-    // Round each line to tiyn so the displayed lines add up to the total.
-    const rounded = Math.round(product * 100) / 100;
+    // Round each line so the displayed amounts add up to the subtotal.
+    const rounded = Math.round(product);
     const amount = Number.isFinite(rounded) ? rounded : 0;
     row.querySelector('[data-field="amount"]').textContent = formatMoney(amount);
     sum += amount;
   }
-  total.textContent = formatMoney(sum);
+  if (!Number.isFinite(sum)) sum = 0;
+  const discount = roundedAmount(sum * (parseNumber(discountInput.value) / 100));
+  const discounted = roundedAmount(sum - discount);
+  const vat = roundedAmount(discounted * (parseNumber(vatInput.value) / 100));
+  document.getElementById("subtotal").textContent = formatMoney(sum);
+  updateSummary("discount", "discount-amount", discount);
+  updateSummary("discounted", "discounted-amount", discounted);
+  updateSummary("vat", "vat-amount", vat);
+  total.textContent = formatMoney(roundedAmount(discounted + vat));
+  for (const symbol of document.querySelectorAll("[data-currency]")) {
+    symbol.textContent = currencyInput.value;
+  }
+}
+
+function roundedAmount(value) {
+  return Number.isFinite(value) ? Math.round(value) : 0;
+}
+
+function updateSummary(rowName, outputId, amount) {
+  document.getElementById(outputId).textContent = formatMoney(amount);
+  document.getElementById(`${rowName}-row`).hidden = amount === 0;
 }
 
 function addItem(focusName = true) {
@@ -74,6 +97,9 @@ items.addEventListener("keydown", (event) => {
 });
 
 addButton.addEventListener("click", () => addItem());
+discountInput.addEventListener("input", recalculate);
+vatInput.addEventListener("input", recalculate);
+currencyInput.addEventListener("change", recalculate);
 
 const today = new Date();
 document.getElementById("estimate-date").value = [
