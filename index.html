@@ -86,7 +86,15 @@
     </section>
     <p class="print-only signature">Подпись ____________________</p>
     <div class="print-actions">
+      <button id="new-estimate" class="secondary-button" type="button">Новая смета</button>
+      <button id="copy-whatsapp" class="secondary-button" type="button">Скопировать для WhatsApp</button>
       <button id="save-pdf" class="add-button" type="button">Сохранить PDF</button>
+      <p id="copy-status" class="action-status" role="status"></p>
+      <p id="storage-status" class="action-status" role="status"></p>
+    </div>
+    <div id="manual-copy" class="card manual-copy" hidden>
+      <label for="share-text">Скопируйте текст вручную</label>
+      <textarea id="share-text" rows="8" readonly></textarea>
     </div>
   </main>
 

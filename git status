@@ -1,0 +1,23 @@
+[33mcommit 160b7ce1dc368c117c10b5d85e29d0fbf2537ae7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Aseke <316226219+Assekke@users.noreply.github.com>
+Date:   Fri Nov 13 20:45:51 2026 +0500
+
+    Добавить PDF для клиента
+
+[33mcommit 670a19ac05096ee717f8216f5a7f587a9a6fcbb7[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: Aseke <316226219+Assekke@users.noreply.github.com>
+Date:   Fri Nov 13 20:40:13 2026 +0500
+
+    Добавить скидку, НДС и валюту
+
+[33mcommit d8a11c82814477f2cda4a8f12dd47340f1ce37d0[m
+Author: Aseke <316226219+Assekke@users.noreply.github.com>
+Date:   Fri Nov 13 20:33:57 2026 +0500
+
+    Добавить расчёт сметы
+
+[33mcommit 77d99aba9ec4c7d6206b7529e821de0baa637a39[m
+Author: zhumagali.asseke@gmail.com <316226219+Assekke@users.noreply.github.com>
+Date:   Fri Nov 13 20:01:08 2026 +0500
+
+    Добавить README и правила для агента
