@@ -15,6 +15,9 @@ const draftDefaults = { "valid-until": "", "advance-type": "amount", "advance-va
 const itemFields = ["name", "quantity", "unit", "price"];
 let restoringDraft = true;
 let copyTimer;
+const companyKey = "smeta-company-v1";
+const companyFields = ["company-phone", "company-address", "company-details"];
+let companyLogo = "";
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
   minimumFractionDigits: 0,
@@ -136,10 +139,11 @@ function preparePrint() {
   const formattedDate = formatDate(date);
   document.getElementById("print-heading").textContent = `Смета № ${number} от ${formattedDate}`;
   document.getElementById("validity-field").classList.toggle("empty-print-field", !document.getElementById("valid-until").value);
+  renderCompany();
 
   // Plain text copies wrap long values and print the entire comment.
   document.querySelectorAll(".print-value").forEach((value) => value.remove());
-  document.querySelectorAll(".details-grid input, #items input, #items select, #comment").forEach((field) => {
+  document.querySelectorAll(".details-grid input, .company-fields textarea, #items input, #items select, #comment").forEach((field) => {
     const value = document.createElement("span");
     value.className = "print-value";
     if (field.dataset.field === "price") {
@@ -167,6 +171,86 @@ function todayDate() {
 function formatDate(value) {
   return value ? value.split("-").reverse().join(".") : "—";
 }
+
+function validLogo(value) {
+  return typeof value === "string" && (value === "" || (value.length <= 1400000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)));
+}
+
+function renderCompany() {
+  const preview = document.getElementById("company-logo");
+  preview.hidden = !companyLogo;
+  if (companyLogo) preview.src = companyLogo;
+  else preview.removeAttribute("src");
+  document.getElementById("remove-logo").hidden = !companyLogo;
+  const hasContacts = companyFields.some((id) => document.getElementById(id).value.trim());
+  document.getElementById("company-card").classList.toggle("empty-print-field", !companyLogo && !hasContacts);
+  for (const id of companyFields) {
+    document.getElementById(id).closest("label").classList.toggle("empty-print-field", !document.getElementById(id).value.trim());
+  }
+}
+
+function saveCompany() {
+  renderCompany();
+  const fields = Object.fromEntries(companyFields.map((id) => [id, document.getElementById(id).value]));
+  try {
+    localStorage.setItem(companyKey, JSON.stringify({ fields, logo: companyLogo }));
+    document.getElementById("company-status").textContent = "";
+  } catch {
+    document.getElementById("company-status").textContent = "Не удалось сохранить контакты или логотип. Попробуйте изображение меньшего размера.";
+  }
+}
+
+function restoreCompany() {
+  try {
+    const stored = localStorage.getItem(companyKey);
+    if (stored) {
+      const profile = JSON.parse(stored);
+      if (!profile || !profile.fields || !companyFields.every((id) => typeof profile.fields[id] === "string") || !validLogo(profile.logo)) throw new Error("Invalid company");
+      companyLogo = profile.logo;
+      for (const id of companyFields) document.getElementById(id).value = profile.fields[id];
+    }
+  } catch {
+    document.getElementById("company-status").textContent = "Не удалось восстановить контакты компании из браузера.";
+  }
+  renderCompany();
+}
+
+for (const id of companyFields) {
+  document.getElementById(id).addEventListener("input", saveCompany);
+  document.getElementById(id).addEventListener("change", saveCompany);
+}
+
+document.getElementById("logo-file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 1024 * 1024) throw new Error("Invalid logo file");
+    const data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Cannot read logo"));
+      reader.readAsDataURL(file);
+    });
+    if (!validLogo(data)) throw new Error("Invalid logo data");
+    await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Cannot decode logo"));
+      image.src = data;
+    });
+    companyLogo = data;
+    saveCompany();
+  } catch {
+    document.getElementById("company-status").textContent = "Выберите исправное изображение PNG, JPG или WebP размером до 1 МБ.";
+  }
+  event.target.value = "";
+});
+
+document.getElementById("remove-logo").addEventListener("click", () => {
+  companyLogo = "";
+  document.getElementById("logo-file").value = "";
+  saveCompany();
+});
 
 function saveDraft() {
   if (restoringDraft) return;
@@ -245,6 +329,10 @@ function shareText() {
     const value = document.getElementById(id).value.trim();
     if (value) lines.push(`${label}: ${value}`);
   }
+  for (const [id, label] of [["company-phone", "Телефон"], ["company-address", "Адрес"], ["company-details", "Реквизиты компании"]]) {
+    const value = document.getElementById(id).value.trim();
+    if (value) lines.push(`${label}: ${value}`);
+  }
   lines.push("");
   for (const row of items.rows) {
     const field = (name) => row.querySelector(`[data-field="${name}"]`);
@@ -292,5 +380,6 @@ document.getElementById("copy-whatsapp").addEventListener("click", async () => {
 });
 
 document.getElementById("estimate-date").value = todayDate();
+restoreCompany();
 if (!restoreDraft()) addItem(false);
 restoringDraft = false;

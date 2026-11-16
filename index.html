@@ -15,6 +15,29 @@
     </header>
     <h1 id="print-heading" class="print-only"></h1>
 
+    <section id="company-card" class="card company-card" aria-labelledby="company-heading">
+      <h2 id="company-heading">Логотип и контакты компании</h2>
+      <img id="company-logo" class="logo-preview" alt="Логотип компании" hidden>
+      <div class="logo-controls">
+        <label for="logo-file">Логотип — PNG, JPG или WebP, до 1 МБ
+          <input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+        <button id="remove-logo" class="secondary-button" type="button" hidden>Удалить логотип</button>
+      </div>
+      <div class="details-grid company-fields">
+        <label for="company-phone">Телефон
+          <input id="company-phone" type="tel" placeholder="Контактный телефон">
+        </label>
+        <label for="company-address">Адрес
+          <input id="company-address" type="text" placeholder="Адрес компании">
+        </label>
+        <label for="company-details">Реквизиты компании
+          <textarea id="company-details" rows="3" placeholder="БИН/ИИН, банковские реквизиты"></textarea>
+        </label>
+      </div>
+      <p id="company-status" class="field-hint" role="status"></p>
+    </section>
+
     <section class="card" aria-labelledby="details-heading">
       <h2 id="details-heading">Реквизиты</h2>
       <div class="details-grid">

@@ -64,6 +64,13 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
 .manual-copy { margin-top: 20px; }
 .manual-copy textarea { margin-top: 8px; }
 [hidden] { display: none !important; }
+.logo-preview { display: block; max-width: 200px; max-height: 96px; object-fit: contain; margin-bottom: 16px; }
+.logo-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.logo-controls input { margin-top: 8px; max-width: 100%; }
+.logo-controls label { min-width: 0; max-width: 100%; }
+.company-fields textarea { margin-top: 8px; }
+.company-fields label:last-child { grid-column: 1 / -1; }
+#company-status:not(:empty) { margin-top: 12px; }
 
 @media screen and (min-width: 641px) and (max-width: 850px) {
   .estimate { padding: 32px 16px; }
@@ -78,7 +85,7 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
 @media print {
   :root, body { color: #000; background: #fff; font-size: 11pt; }
   .estimate { width: 100%; max-width: none; margin: 0; padding: 0; }
-  .page-header, button, .print-actions, .manual-copy, .adjustments, .remove-cell,
+  .page-header, button, .print-actions, .manual-copy, .adjustments, .remove-cell, .logo-controls, #company-status,
   th:last-child, .mobile-label, .empty-print-field { display: none !important; }
   .print-only { display: block; }
   #print-heading { margin: 0 0 8mm; font-size: 18pt; letter-spacing: normal; overflow-wrap: anywhere; }
@@ -87,7 +94,8 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
   .details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3mm 8mm; }
   .details-grid label { font-size: 10pt; }
   .details-grid .print-value { margin-top: 1mm; font-size: 11pt; font-weight: 400; }
-  .details-grid input, .positions input, .positions select, .comment-card textarea { display: none !important; border: 0; }
+  .details-grid input, .company-fields textarea, .positions input, .positions select, .comment-card textarea { display: none !important; border: 0; }
+  .logo-preview { max-width: 45mm; max-height: 20mm; margin-bottom: 3mm; }
   .print-value { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
   table { display: table; width: 100%; border-collapse: collapse; table-layout: fixed; }
   thead { display: table-header-group; }
