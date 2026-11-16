@@ -61,6 +61,26 @@
 
     <section class="card positions" aria-labelledby="positions-heading">
       <h2 id="positions-heading">Позиции</h2>
+      <details class="catalog-panel">
+        <summary>Каталог товаров и услуг</summary>
+        <p class="field-hint">Сохраняйте цены в текущей валюте сметы. При смене валюты показываются соответствующие записи; пересчёта курса нет.</p>
+        <form id="catalog-form" class="catalog-form">
+          <div class="catalog-fields">
+            <label for="catalog-name">Наименование
+              <input id="catalog-name" type="text" required placeholder="Товар или услуга">
+            </label>
+            <label for="catalog-unit">Единица
+              <select id="catalog-unit"><option>шт</option><option>час</option><option>услуга</option></select>
+            </label>
+            <label for="catalog-price">Цена, <span data-currency>₸</span>
+              <input id="catalog-price" type="text" inputmode="decimal" value="0">
+            </label>
+          </div>
+          <button class="secondary-button" type="submit">Сохранить в каталог</button>
+        </form>
+        <p id="catalog-status" class="field-hint" role="status"></p>
+        <div id="catalog-list" class="catalog-list"></div>
+      </details>
       <table>
         <caption class="visually-hidden">Позиции сметы</caption>
         <thead>

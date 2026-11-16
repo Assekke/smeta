@@ -18,6 +18,8 @@ let copyTimer;
 const companyKey = "smeta-company-v1";
 const companyFields = ["company-phone", "company-address", "company-details"];
 let companyLogo = "";
+const catalogKey = "smeta-catalog-v1";
+let catalog = [];
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
   minimumFractionDigits: 0,
@@ -127,7 +129,10 @@ items.addEventListener("keydown", (event) => {
 addButton.addEventListener("click", () => addItem());
 discountInput.addEventListener("input", recalculate);
 vatInput.addEventListener("input", recalculate);
-currencyInput.addEventListener("change", recalculate);
+currencyInput.addEventListener("change", () => {
+  recalculate();
+  renderCatalog();
+});
 document.getElementById("advance-type").addEventListener("change", recalculate);
 document.getElementById("advance-value").addEventListener("input", recalculate);
 document.getElementById("delivery-value").addEventListener("input", recalculate);
@@ -214,6 +219,113 @@ function restoreCompany() {
   }
   renderCompany();
 }
+
+function restoreCatalog() {
+  try {
+    const stored = localStorage.getItem(catalogKey);
+    if (!stored) return;
+    const entries = JSON.parse(stored);
+    if (!Array.isArray(entries) || !entries.every((entry) => entry
+      && Number.isSafeInteger(entry.id) && entry.id > 0
+      && typeof entry.name === "string" && entry.name.trim()
+      && typeof entry.price === "string"
+      && ["шт", "час", "услуга"].includes(entry.unit)
+      && ["₸", "₽", "$", "€"].includes(entry.currency))
+      || new Set(entries.map((entry) => entry.id)).size !== entries.length) throw new Error("Invalid catalog");
+    catalog = entries;
+  } catch {
+    document.getElementById("catalog-status").textContent = "Не удалось восстановить каталог из браузера.";
+  }
+}
+
+function saveCatalog() {
+  try {
+    localStorage.setItem(catalogKey, JSON.stringify(catalog));
+    return true;
+  } catch {
+    document.getElementById("catalog-status").textContent = "Не удалось сохранить каталог. Записи доступны только до закрытия страницы.";
+    return false;
+  }
+}
+
+function renderCatalog() {
+  const list = document.getElementById("catalog-list");
+  list.replaceChildren();
+  const entries = catalog.filter((entry) => entry.currency === currencyInput.value);
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "field-hint";
+    empty.textContent = "В этой валюте пока нет сохранённых позиций.";
+    list.append(empty);
+  }
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "catalog-entry";
+    const label = document.createElement("span");
+    label.textContent = `${entry.name} — ${formatMoney(parseNumber(entry.price))} / ${entry.unit}`;
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "secondary-button";
+    add.textContent = "Добавить";
+    add.dataset.catalogAdd = String(entry.id);
+    add.setAttribute("aria-label", `Добавить «${entry.name}» в смету`);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondary-button";
+    remove.textContent = "Удалить";
+    remove.dataset.catalogRemove = String(entry.id);
+    remove.setAttribute("aria-label", `Удалить «${entry.name}» из каталога`);
+    row.append(label, add, remove);
+    list.append(row);
+  }
+}
+
+document.getElementById("catalog-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const nameInput = document.getElementById("catalog-name");
+  const name = nameInput.value.trim();
+  if (!name) {
+    document.getElementById("catalog-status").textContent = "Введите наименование позиции.";
+    nameInput.focus();
+    return;
+  }
+  const unit = document.getElementById("catalog-unit").value;
+  const price = String(parseNumber(document.getElementById("catalog-price").value));
+  const existing = catalog.find((entry) => entry.name === name && entry.unit === unit && entry.currency === currencyInput.value);
+  if (existing) existing.price = price;
+  else catalog.push({ id: catalog.reduce((max, entry) => Math.max(max, entry.id), 0) + 1, name, unit, price, currency: currencyInput.value });
+  if (saveCatalog()) document.getElementById("catalog-status").textContent = existing ? "Цена в каталоге обновлена." : "Позиция сохранена в каталоге.";
+  renderCatalog();
+  nameInput.value = "";
+  document.getElementById("catalog-price").value = "0";
+  nameInput.focus();
+});
+
+document.getElementById("catalog-list").addEventListener("click", (event) => {
+  const add = event.target.closest("[data-catalog-add]");
+  const remove = event.target.closest("[data-catalog-remove]");
+  const button = add || remove;
+  if (!button) return;
+  const id = Number(add ? add.dataset.catalogAdd : remove.dataset.catalogRemove);
+  const entry = catalog.find((item) => item.id === id && item.currency === currencyInput.value);
+  if (!entry) return;
+  if (remove) {
+    if (!window.confirm(`Удалить «${entry.name}» из каталога? Позиции в смете останутся.`)) return;
+    catalog = catalog.filter((item) => item.id !== id);
+    if (saveCatalog()) document.getElementById("catalog-status").textContent = "Позиция удалена из каталога.";
+    renderCatalog();
+    document.getElementById("catalog-name").focus();
+    return;
+  }
+  const values = { name: entry.name, quantity: "1", unit: entry.unit, price: entry.price };
+  const empty = Array.from(items.rows).find((row) => ["name", "quantity", "price"].every((field) => !row.querySelector(`[data-field="${field}"]`).value.trim()));
+  if (empty) {
+    for (const field of itemFields) empty.querySelector(`[data-field="${field}"]`).value = values[field];
+    recalculate();
+    saveDraft();
+    empty.querySelector('[data-field="quantity"]').focus();
+  } else addItem(true, values);
+});
 
 for (const id of companyFields) {
   document.getElementById(id).addEventListener("input", saveCompany);
@@ -314,6 +426,7 @@ document.getElementById("new-estimate").addEventListener("click", () => {
   document.getElementById("manual-copy").hidden = true;
   document.getElementById("share-text").value = "";
   addItem();
+  renderCatalog();
   restoringDraft = false;
   saveDraft();
 });
@@ -381,5 +494,7 @@ document.getElementById("copy-whatsapp").addEventListener("click", async () => {
 
 document.getElementById("estimate-date").value = todayDate();
 restoreCompany();
+restoreCatalog();
 if (!restoreDraft()) addItem(false);
+renderCatalog();
 restoringDraft = false;
