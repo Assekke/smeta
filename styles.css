@@ -78,7 +78,7 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
   :root, body { color: #000; background: #fff; font-size: 11pt; }
   .estimate { width: 100%; max-width: none; margin: 0; padding: 0; }
   .page-header, button, .print-actions, .manual-copy, .adjustments, .remove-cell,
-  th:last-child, .mobile-label { display: none !important; }
+  th:last-child, .mobile-label, .empty-print-field { display: none !important; }
   .print-only { display: block; }
   #print-heading { margin: 0 0 8mm; font-size: 18pt; letter-spacing: normal; overflow-wrap: anywhere; }
   h2 { margin: 0 0 3mm; font-size: 12pt; }

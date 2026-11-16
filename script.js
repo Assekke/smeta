@@ -9,7 +9,9 @@ const vatInput = document.getElementById("vat-percent");
 const currencyInput = document.getElementById("currency");
 let nextItemId = 0;
 const draftKey = "smeta-draft-v1";
-const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "comment", "discount-percent", "vat-percent", "currency"];
+const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "valid-until", "comment", "discount-percent", "vat-percent", "currency"];
+// Optional fields let drafts from earlier versions open without losing data.
+const draftDefaults = { "valid-until": "" };
 const itemFields = ["name", "quantity", "unit", "price"];
 let restoringDraft = true;
 let copyTimer;
@@ -117,8 +119,9 @@ function preparePrint() {
   recalculate();
   const number = document.getElementById("estimate-number").value.trim() || "—";
   const date = document.getElementById("estimate-date").value;
-  const formattedDate = date ? date.split("-").reverse().join(".") : "—";
+  const formattedDate = formatDate(date);
   document.getElementById("print-heading").textContent = `Смета № ${number} от ${formattedDate}`;
+  document.getElementById("validity-field").classList.toggle("empty-print-field", !document.getElementById("valid-until").value);
 
   // Plain text copies wrap long values and print the entire comment.
   document.querySelectorAll(".print-value").forEach((value) => value.remove());
@@ -130,7 +133,7 @@ function preparePrint() {
     } else if (field.dataset.field === "quantity") {
       value.textContent = String(parseNumber(field.value)).replace(".", ",");
     } else {
-      value.textContent = field.type === "date" ? formattedDate : field.value;
+      value.textContent = field.type === "date" ? formatDate(field.value) : field.value;
     }
     field.insertAdjacentElement("afterend", value);
   });
@@ -145,6 +148,10 @@ window.addEventListener("beforeprint", preparePrint);
 function todayDate() {
   const today = new Date();
   return [today.getFullYear(), String(today.getMonth() + 1).padStart(2, "0"), String(today.getDate()).padStart(2, "0")].join("-");
+}
+
+function formatDate(value) {
+  return value ? value.split("-").reverse().join(".") : "—";
 }
 
 function saveDraft() {
@@ -165,12 +172,12 @@ function restoreDraft() {
     if (!stored) return false;
     const draft = JSON.parse(stored);
     if (!draft || !draft.fields || !Array.isArray(draft.positions)
-      || !draftFields.every((id) => typeof draft.fields[id] === "string")
+      || !draftFields.every((id) => typeof draft.fields[id] === "string" || (draft.fields[id] === undefined && Object.hasOwn(draftDefaults, id)))
       || !["₸", "₽", "$", "€"].includes(draft.fields.currency)
       || !draft.positions.every((row) => row && itemFields.every((field) => typeof row[field] === "string") && ["шт", "час", "услуга"].includes(row.unit))) {
       throw new Error("Invalid draft");
     }
-    for (const id of draftFields) document.getElementById(id).value = draft.fields[id];
+    for (const id of draftFields) document.getElementById(id).value = draft.fields[id] ?? draftDefaults[id];
     for (const position of draft.positions) addItem(false, position);
     recalculate();
     return true;
@@ -217,6 +224,8 @@ function shareText() {
   const number = document.getElementById("estimate-number").value.trim() || "—";
   const date = document.getElementById("estimate-date").value;
   const lines = [`Смета № ${number} от ${date ? date.split("-").reverse().join(".") : "—"}`];
+  const validUntil = document.getElementById("valid-until").value;
+  if (validUntil) lines.push(`Действует до: ${formatDate(validUntil)}`);
   for (const [id, label] of [["sender", "От кого"], ["recipient", "Для кого"]]) {
     const value = document.getElementById(id).value.trim();
     if (value) lines.push(`${label}: ${value}`);
