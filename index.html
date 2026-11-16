@@ -68,6 +68,10 @@
             <option value="€">€</option>
           </select>
         </label>
+        <label for="delivery-value">Доставка, <span data-currency>₸</span>
+          <input id="delivery-value" type="text" inputmode="decimal" value="0" aria-describedby="delivery-hint">
+        </label>
+        <p id="delivery-hint" class="field-hint">Доставка добавляется после скидки и НДС, без дополнительных начислений.</p>
       </div>
       <div class="adjustments payment-controls">
         <label for="advance-type">Предоплата
@@ -89,6 +93,7 @@
         <div id="discount-row" class="summary-row" hidden><dt>Скидка</dt><dd><output id="discount-amount">0 ₸</output></dd></div>
         <div id="discounted-row" class="summary-row" hidden><dt>Сумма со скидкой</dt><dd><output id="discounted-amount">0 ₸</output></dd></div>
         <div id="vat-row" class="summary-row" hidden><dt>НДС</dt><dd><output id="vat-amount">0 ₸</output></dd></div>
+        <div id="delivery-row" class="summary-row" hidden><dt>Доставка</dt><dd><output id="delivery-amount">0 ₸</output></dd></div>
       </dl>
       <div class="summary-row grand-total">
         <h2 id="total-heading">Итого к оплате</h2>

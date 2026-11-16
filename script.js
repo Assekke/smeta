@@ -9,9 +9,9 @@ const vatInput = document.getElementById("vat-percent");
 const currencyInput = document.getElementById("currency");
 let nextItemId = 0;
 const draftKey = "smeta-draft-v1";
-const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "valid-until", "comment", "discount-percent", "vat-percent", "currency", "advance-type", "advance-value"];
+const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "valid-until", "comment", "discount-percent", "vat-percent", "currency", "advance-type", "advance-value", "delivery-value"];
 // Optional fields let drafts from earlier versions open without losing data.
-const draftDefaults = { "valid-until": "", "advance-type": "amount", "advance-value": "0" };
+const draftDefaults = { "valid-until": "", "advance-type": "amount", "advance-value": "0", "delivery-value": "0" };
 const itemFields = ["name", "quantity", "unit", "price"];
 let restoringDraft = true;
 let copyTimer;
@@ -54,7 +54,9 @@ function recalculate() {
   updateSummary("discount", "discount-amount", discount);
   updateSummary("discounted", "discounted-amount", discounted);
   updateSummary("vat", "vat-amount", vat);
-  const payable = roundedAmount(discounted + vat);
+  const delivery = roundedAmount(parseNumber(document.getElementById("delivery-value").value));
+  updateSummary("delivery", "delivery-amount", delivery);
+  const payable = roundedAmount(discounted + vat + delivery);
   total.textContent = formatMoney(payable);
   const advanceValue = parseNumber(document.getElementById("advance-value").value);
   const requestedAdvance = document.getElementById("advance-type").value === "percent"
@@ -125,6 +127,7 @@ vatInput.addEventListener("input", recalculate);
 currencyInput.addEventListener("change", recalculate);
 document.getElementById("advance-type").addEventListener("change", recalculate);
 document.getElementById("advance-value").addEventListener("input", recalculate);
+document.getElementById("delivery-value").addEventListener("input", recalculate);
 
 function preparePrint() {
   recalculate();
@@ -256,6 +259,9 @@ function shareText() {
   }
   if (!document.getElementById("vat-row").hidden) {
     lines.push(`НДС (${vatInput.value.trim()} %): ${document.getElementById("vat-amount").textContent}`);
+  }
+  if (!document.getElementById("delivery-row").hidden) {
+    lines.push(`Доставка: ${document.getElementById("delivery-amount").textContent}`);
   }
   lines.push(`Итого к оплате: ${total.textContent}`);
   if (!document.getElementById("payment-summary").hidden) {
