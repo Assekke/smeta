@@ -9,9 +9,9 @@ const vatInput = document.getElementById("vat-percent");
 const currencyInput = document.getElementById("currency");
 let nextItemId = 0;
 const draftKey = "smeta-draft-v1";
-const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "valid-until", "comment", "discount-percent", "vat-percent", "currency"];
+const draftFields = ["sender", "recipient", "estimate-number", "estimate-date", "valid-until", "comment", "discount-percent", "vat-percent", "currency", "advance-type", "advance-value"];
 // Optional fields let drafts from earlier versions open without losing data.
-const draftDefaults = { "valid-until": "" };
+const draftDefaults = { "valid-until": "", "advance-type": "amount", "advance-value": "0" };
 const itemFields = ["name", "quantity", "unit", "price"];
 let restoringDraft = true;
 let copyTimer;
@@ -54,7 +54,16 @@ function recalculate() {
   updateSummary("discount", "discount-amount", discount);
   updateSummary("discounted", "discounted-amount", discounted);
   updateSummary("vat", "vat-amount", vat);
-  total.textContent = formatMoney(roundedAmount(discounted + vat));
+  const payable = roundedAmount(discounted + vat);
+  total.textContent = formatMoney(payable);
+  const advanceValue = parseNumber(document.getElementById("advance-value").value);
+  const requestedAdvance = document.getElementById("advance-type").value === "percent"
+    ? roundedAmount(payable * (Math.min(advanceValue, 100) / 100))
+    : roundedAmount(advanceValue);
+  const advance = Math.min(Math.max(payable, 0), Math.max(requestedAdvance, 0));
+  document.getElementById("advance-amount").textContent = formatMoney(advance);
+  document.getElementById("balance-amount").textContent = formatMoney(payable - advance);
+  document.getElementById("payment-summary").hidden = advance === 0;
   for (const symbol of document.querySelectorAll("[data-currency]")) {
     symbol.textContent = currencyInput.value;
   }
@@ -114,6 +123,8 @@ addButton.addEventListener("click", () => addItem());
 discountInput.addEventListener("input", recalculate);
 vatInput.addEventListener("input", recalculate);
 currencyInput.addEventListener("change", recalculate);
+document.getElementById("advance-type").addEventListener("change", recalculate);
+document.getElementById("advance-value").addEventListener("input", recalculate);
 
 function preparePrint() {
   recalculate();
@@ -174,6 +185,7 @@ function restoreDraft() {
     if (!draft || !draft.fields || !Array.isArray(draft.positions)
       || !draftFields.every((id) => typeof draft.fields[id] === "string" || (draft.fields[id] === undefined && Object.hasOwn(draftDefaults, id)))
       || !["₸", "₽", "$", "€"].includes(draft.fields.currency)
+      || !["amount", "percent"].includes(draft.fields["advance-type"] ?? "amount")
       || !draft.positions.every((row) => row && itemFields.every((field) => typeof row[field] === "string") && ["шт", "час", "услуга"].includes(row.unit))) {
       throw new Error("Invalid draft");
     }
@@ -201,7 +213,7 @@ document.getElementById("new-estimate").addEventListener("click", () => {
     ? oldNumber.replace(/\d+$/, (digits) => (BigInt(digits) + 1n).toString().padStart(digits.length, "0"))
     : "1";
   restoringDraft = true;
-  for (const id of draftFields) document.getElementById(id).value = "";
+  for (const id of draftFields) document.getElementById(id).value = draftDefaults[id] ?? "";
   document.getElementById("estimate-number").value = nextNumber;
   document.getElementById("estimate-date").value = todayDate();
   discountInput.value = "0";
@@ -246,6 +258,10 @@ function shareText() {
     lines.push(`НДС (${vatInput.value.trim()} %): ${document.getElementById("vat-amount").textContent}`);
   }
   lines.push(`Итого к оплате: ${total.textContent}`);
+  if (!document.getElementById("payment-summary").hidden) {
+    lines.push(`Предоплата: ${document.getElementById("advance-amount").textContent}`);
+    lines.push(`Осталось оплатить: ${document.getElementById("balance-amount").textContent}`);
+  }
   const comment = document.getElementById("comment").value.trim();
   if (comment) lines.push("", comment);
   return lines.join("\n");

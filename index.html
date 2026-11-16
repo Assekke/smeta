@@ -69,6 +69,18 @@
           </select>
         </label>
       </div>
+      <div class="adjustments payment-controls">
+        <label for="advance-type">Предоплата
+          <select id="advance-type">
+            <option value="amount">Суммой</option>
+            <option value="percent">В процентах</option>
+          </select>
+        </label>
+        <label for="advance-value">Размер предоплаты
+          <input id="advance-value" type="text" inputmode="decimal" value="0" aria-describedby="advance-hint">
+        </label>
+        <p id="advance-hint" class="field-hint">Предоплата считается от итога, не больше полной стоимости. Процент — от 0 до 100.</p>
+      </div>
     </section>
 
     <section class="total-card" aria-labelledby="total-heading">
@@ -82,6 +94,10 @@
         <h2 id="total-heading">Итого к оплате</h2>
         <output id="total" aria-live="polite" aria-atomic="true">0 ₸</output>
       </div>
+      <dl id="payment-summary" class="summary" hidden>
+        <div class="summary-row"><dt>Предоплата</dt><dd><output id="advance-amount">0 ₸</output></dd></div>
+        <div class="summary-row"><dt>Осталось оплатить</dt><dd><output id="balance-amount">0 ₸</output></dd></div>
+      </dl>
     </section>
     <section class="card comment-card" aria-labelledby="comment-heading">
       <h2 id="comment-heading"><label for="comment">Комментарий</label></h2>
