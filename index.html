@@ -10,6 +10,7 @@
 <body>
   <main class="estimate">
     <header class="page-header">
+      <p class="test-mark">АСКАР ТЕСТ</p>
       <h1>Смета за 5 минут</h1>
       <p>Добавьте позиции и цены — смета посчитает всё сама.</p>
     </header>
@@ -19,9 +20,11 @@
       <h2 id="company-heading">Логотип и контакты компании</h2>
       <img id="company-logo" class="logo-preview" alt="Логотип компании" hidden>
       <div class="logo-controls">
-        <label for="logo-file">Логотип — PNG, JPG или WebP, до 1 МБ
-          <input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp">
-        </label>
+        <div>
+          <label for="choose-logo">Логотип — PNG, JPG или WebP, до 1 МБ</label>
+          <input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <button id="choose-logo" type="button">Выбрать файл</button>
+        </div>
         <button id="remove-logo" class="secondary-button" type="button" hidden>Удалить логотип</button>
       </div>
       <div class="details-grid company-fields">
@@ -53,8 +56,9 @@
         <label for="estimate-date">Дата
           <input id="estimate-date" type="date">
         </label>
-        <label id="validity-field" for="valid-until">Действует до
-          <input id="valid-until" type="date">
+        <label id="validity-field" for="valid-until-display">Действует до
+          <input id="valid-until" type="hidden">
+          <input id="valid-until-display" type="text" inputmode="numeric" placeholder="дд.мм.гггг" aria-label="Действует до — день, месяц, год" maxlength="10">
         </label>
       </div>
     </section>
@@ -142,6 +146,7 @@
         <h2 id="total-heading">Итого к оплате</h2>
         <output id="total" aria-live="polite" aria-atomic="true">0 ₸</output>
       </div>
+      <p id="total-words" class="total-words" hidden></p>
       <dl id="payment-summary" class="summary" hidden>
         <div class="summary-row"><dt>Предоплата</dt><dd><output id="advance-amount">0 ₸</output></dd></div>
         <div class="summary-row"><dt>Осталось оплатить</dt><dd><output id="balance-amount">0 ₸</output></dd></div>

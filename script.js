@@ -39,6 +39,39 @@ function parseNumber(value) {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
+function tengeInWords(amount) {
+  if (!Number.isInteger(amount) || amount < 1 || amount > 999999999) return "";
+  const ones = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+  const teens = ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+  const tens = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+  const hundreds = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+  const words = [];
+  for (const [divisor, forms, feminine] of [
+    [1000000, ["миллион", "миллиона", "миллионов"], false],
+    [1000, ["тысяча", "тысячи", "тысяч"], true],
+    [1, null, false],
+  ]) {
+    const group = Math.floor(amount / divisor) % 1000;
+    if (!group) continue;
+    if (group >= 100) words.push(hundreds[Math.floor(group / 100)]);
+    const lastTwo = group % 100;
+    const last = group % 10;
+    if (lastTwo >= 10 && lastTwo <= 19) {
+      words.push(teens[lastTwo - 10]);
+    } else {
+      if (lastTwo >= 20) words.push(tens[Math.floor(lastTwo / 10)]);
+      if (last) words.push(feminine && last <= 2 ? ["", "одна", "две"][last] : ones[last]);
+    }
+    if (forms) {
+      const form = lastTwo >= 11 && lastTwo <= 14 ? 2 : last === 1 ? 0 : last >= 2 && last <= 4 ? 1 : 2;
+      words.push(forms[form]);
+    }
+  }
+  words.push("тенге");
+  const text = words.join(" ");
+  return text[0].toUpperCase() + text.slice(1);
+}
+
 function recalculate() {
   let sum = 0;
   for (const row of items.rows) {
@@ -63,6 +96,9 @@ function recalculate() {
   updateSummary("delivery", "delivery-amount", delivery);
   const payable = roundedAmount(discounted + vat + delivery);
   total.textContent = formatMoney(payable);
+  const totalWords = document.getElementById("total-words");
+  totalWords.textContent = currencyInput.value === "₸" ? tengeInWords(payable) : "";
+  totalWords.hidden = !totalWords.textContent;
   const advanceValue = parseNumber(document.getElementById("advance-value").value);
   const requestedAdvance = document.getElementById("advance-type").value === "percent"
     ? roundedAmount(payable * (Math.min(advanceValue, 100) / 100))
@@ -148,7 +184,7 @@ function preparePrint() {
 
   // Plain text copies wrap long values and print the entire comment.
   document.querySelectorAll(".print-value").forEach((value) => value.remove());
-  document.querySelectorAll(".details-grid input, .company-fields textarea, #items input, #items select, #comment").forEach((field) => {
+  document.querySelectorAll('.details-grid input:not([type="hidden"]), .company-fields textarea, #items input, #items select, #comment').forEach((field) => {
     const value = document.createElement("span");
     value.className = "print-value";
     if (field.dataset.field === "price") {
@@ -176,6 +212,30 @@ function todayDate() {
 function formatDate(value) {
   return value ? value.split("-").reverse().join(".") : "—";
 }
+
+function restoreValidityDisplay() {
+  const field = document.getElementById("valid-until-display");
+  const value = document.getElementById("valid-until").value;
+  field.value = value ? formatDate(value) : "";
+  field.setCustomValidity("");
+}
+
+document.getElementById("valid-until-display").addEventListener("input", (event) => {
+  const field = event.target;
+  const text = field.value.trim();
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(text);
+  let iso = "";
+  if (match) {
+    const [, day, month, year] = match;
+    const candidate = `${year}-${month}-${day}`;
+    const date = new Date(`${candidate}T00:00:00Z`);
+    if (Number(year) > 0 && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === candidate) iso = candidate;
+  }
+  document.getElementById("valid-until").value = iso;
+  field.setCustomValidity(text && !iso ? "Введите существующую дату в формате дд.мм.гггг" : "");
+  saveDraft();
+});
+document.getElementById("valid-until-display").addEventListener("change", (event) => event.target.reportValidity());
 
 function validLogo(value) {
   return typeof value === "string" && (value === "" || (value.length <= 1400000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)));
@@ -332,6 +392,8 @@ for (const id of companyFields) {
   document.getElementById(id).addEventListener("change", saveCompany);
 }
 
+document.getElementById("choose-logo").addEventListener("click", () => document.getElementById("logo-file").click());
+
 document.getElementById("logo-file").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -413,6 +475,7 @@ document.getElementById("new-estimate").addEventListener("click", () => {
     : "1";
   restoringDraft = true;
   for (const id of draftFields) document.getElementById(id).value = draftDefaults[id] ?? "";
+  restoreValidityDisplay();
   document.getElementById("estimate-number").value = nextNumber;
   document.getElementById("estimate-date").value = todayDate();
   discountInput.value = "0";
@@ -465,6 +528,8 @@ function shareText() {
     lines.push(`Доставка: ${document.getElementById("delivery-amount").textContent}`);
   }
   lines.push(`Итого к оплате: ${total.textContent}`);
+  const totalWords = document.getElementById("total-words");
+  if (!totalWords.hidden) lines.push(totalWords.textContent);
   if (!document.getElementById("payment-summary").hidden) {
     lines.push(`Предоплата: ${document.getElementById("advance-amount").textContent}`);
     lines.push(`Осталось оплатить: ${document.getElementById("balance-amount").textContent}`);
@@ -496,5 +561,6 @@ document.getElementById("estimate-date").value = todayDate();
 restoreCompany();
 restoreCatalog();
 if (!restoreDraft()) addItem(false);
+restoreValidityDisplay();
 renderCatalog();
 restoringDraft = false;
